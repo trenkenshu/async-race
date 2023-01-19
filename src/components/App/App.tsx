@@ -1,14 +1,10 @@
 import React from 'react';
-import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Error404 from '../../pages/Error404';
 import Garage from '../../pages/Garage';
 import Winners from '../../pages/Winners';
 
 const App = () => {
-    const x = {
-        a: 'aaa',
-        b: 'bbb',
-    };
     return (
         <BrowserRouter basename="/">
             <Routes>

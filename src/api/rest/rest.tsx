@@ -138,7 +138,7 @@ export default class Rest {
         return (await start).json() as Promise<IDrive>;
     }
 
-    async getWinners(limit?: number, page?: number, sort?: 'id' | 'wins' | 'time', order?: 'ASC' | 'DESC'): Promise<ICar[]> {
+    async getWinners(limit?: number, page?: number, sort?: 'id' | 'wins' | 'time', order?: 'ASC' | 'DESC'): Promise<IWinner[]> {
         const url = new URL('http://localhost:3000/winners');
         limit && url.searchParams.set('_limit', limit.toString());
         page && url.searchParams.set('_page', page.toString());

@@ -11,6 +11,7 @@
     "moduleResolution" : "Node"
   },
   "include": [
-    "./src/**/*"
+    "./src/**/*",
+    "src/interfaces/custom.d.ts"
   ]
 }

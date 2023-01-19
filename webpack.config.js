@@ -49,7 +49,11 @@ const config = {
               use: [stylesHandler, 'css-loader'],
           },
           {
-              test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
+            test: /\.svg$/i,
+            use: ['@svgr/webpack'],
+          },
+          {
+              test: /\.(eot|ttf|woff|woff2|png|jpg|gif)$/i,
               type: 'asset',
           },
       ],

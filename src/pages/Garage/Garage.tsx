@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Rest from '../../api/rest';
 import { ICar, IWinner } from '../../interface/interface';
+import CarImg from '../../assets/car2.svg';
+const logo = require('../../assets/car2.svg');
+
 
 const api = new Rest();
 // const x = api.getCars();
@@ -39,11 +42,15 @@ const Garage = () => {
 
     return (
         <>
-            <h1 style={{ background: bg }}>Garage</h1>
-            <span onClick={load}>Load</span>
-            <Link to="/winners">Winners</Link>
+            <h1 className='header' >Garage</h1>
+            <div style={{height: '2rem'}}><span onClick={load}>Load</span></div>
+            Go to <Link className='link' to="/winners">Winners</Link>
             <div className="racingTrack">{ cars.map(item => {
-                return <div className='singleTrack' key={item.id}>{item.name}</div>
+                return (<div className='singleTrack' key={item.id}>
+                            <h3>{item.name}</h3>
+                            <CarImg className='svg' height="50" width="100" fill={item.color}/>
+                            <div className="finish"></div>
+                    </div>)
             })}</div>
         </>
     );
