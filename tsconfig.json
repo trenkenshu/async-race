@@ -4,10 +4,11 @@
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "module": "commonjs",
-    "target": "es2015",
+    "module": "es6",
+    "target": "es5",
     "jsx": "react",
     "esModuleInterop": true,
+    "moduleResolution" : "Node"
   },
   "include": [
     "./src/**/*"

@@ -1,6 +1,6 @@
 {
   "presets": [
-    "airbnb",
+    "babel-preset-airbnb",
     "@babel/react",
     "@babel/typescript",
     [
