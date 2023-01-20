@@ -1,3 +1,5 @@
+import Rest from "../api/rest";
+
 export interface ICar extends Record<string, number | string> {
     name: string;
     color: string;
@@ -17,4 +19,18 @@ export interface IWinner extends Record<string, number> {
     id: number;
     wins: number;
     time: number;
+}
+
+export interface IGarage {
+    cars: ICar[];
+    emptyCar: ICar;
+    setCars: (arg: ICar[]) => void;
+    selectedCar: ICar;
+    setSelectedCar: (arg: ICar) => void;
+    color: string;
+    name: string;
+    setColor: (arg: string) => void;
+    setName: (arg: string) => void;
+    refreshCars: (page: number, api: Rest, setCars: (arg: ICar[]) => void) => void;
+    curentPageNum: number;
 }

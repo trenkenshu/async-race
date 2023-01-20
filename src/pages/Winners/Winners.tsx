@@ -18,11 +18,11 @@ const Winners = () => {
                 winnersBuffer = data;
                 return Promise.all(promiseArray);
             }).then(cars => {
-                console.log(cars);
+                // console.log(cars);
                 const winnersWithNames: {winner: IWinner, name: string}[] = [];
                 winnersBuffer.forEach(item => {
                     const name: string | undefined = cars.find(i => i.id === item.id)?.name;
-                    winnersWithNames.push({winner: item, name: name || 'no name' });
+                    winnersWithNames.push({winner: item, name: name || 'Deleted' });
                 });
                 setWinners(winnersWithNames);
             })
@@ -31,7 +31,9 @@ const Winners = () => {
     return (
         <div>
             <h1 className='header'>Winners</h1>
-            Go to <Link className='link' to="/garage">Garage</Link>
+            <div style={{height: '2rem'}}>
+                Go to <Link className='link' to="/garage">Garage</Link>
+            </div>
             {winners.map(line => {
                 return <div key={line.winner.id} className="singleWinner">{`${line.winner.id} ${line.name} ${line.winner.wins} ${line.winner.time}`}</div>
             })}

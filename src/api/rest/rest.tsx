@@ -28,7 +28,7 @@ export default class Rest {
         return car && (await car).json() as Promise<object>;
     }
 
-    async getCars(page?: number, limit?: number): Promise<ICar[]> {
+    async getCars(page?: number, limit?: number): Promise<Response> {
         const url = new URL('http://localhost:3000/garage');
         limit && url.searchParams.set('_limit', limit.toString());
         page && url.searchParams.set('_page', page.toString());
@@ -36,7 +36,7 @@ export default class Rest {
             method: 'GET',
         });
 
-        return (await cars).json() as Promise<ICar[]>;
+        return cars;
     }
 
     async createCar(color: string, name: string): Promise<ICar> {
@@ -56,43 +56,46 @@ export default class Rest {
         return (await car).json() as Promise<ICar>;
     }
 
-    async newRandomCars(): Promise<ICar> {
-        let color: string =
-            '#' +
-            Math.floor(Math.random() * 256).toString(16) +
-            Math.floor(Math.random() * 256).toString(16) +
-            Math.floor(Math.random() * 256).toString(16);
-        color =
-            color.length < 7
-                ? color +
-                  Array(7 - color.length)
-                      .fill('f')
-                      .toString()
-                : color;
-        const request: { [key: string]: string } = {
-            name: `${brand[Math.floor(Math.random() * brand.length)]} ${
-                model[Math.floor(Math.random() * model.length)]
-            }`,
-            color: color,
-        };
-        const car = fetch('http://localhost:3000/garage', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(request),
-        });
+    async newRandomCars(amount: number): Promise<Response[]> {
+        const promiseArr: Promise<Response>[] = [];
+        for (let i = 0; i < amount; i++) {
+            let color: string =
+                '#' +
+                Math.floor(Math.random() * 256).toString(16) +
+                Math.floor(Math.random() * 256).toString(16) +
+                Math.floor(Math.random() * 256).toString(16);
+            color =
+                color.length < 7
+                    ? color +
+                    Array(7 - color.length)
+                        .fill('f')
+                        .toString()
+                    : color;
+            const request: { [key: string]: string } = {
+                name: `${brand[Math.floor(Math.random() * brand.length)]} ${
+                    model[Math.floor(Math.random() * model.length)]
+                }`,
+                color: color,
+            };
+            const car = fetch('http://localhost:3000/garage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(request),
+            });
+            promiseArr.push(car);
+        }
 
-        return (await car).json() as Promise<ICar>;
+        return Promise.all(promiseArr);
     }
 
     async updateCar(id: number, color: string, name: string): Promise<ICar> {
         const request = {
             name,
             color,
-            id,
         };
-        const car = fetch('http://localhost:3000/garage/' + id.toString(), {
+        const car = fetch(`http://localhost:3000/garage/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
