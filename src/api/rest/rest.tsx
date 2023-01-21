@@ -132,13 +132,13 @@ export default class Rest {
         return (await start).json() as Promise<IRace>;
     }
 
-    async driveEngine(id: number): Promise<IDrive> {
+    async driveEngine(id: number): Promise<Response> {
         const url = this.engine(id, 'drive');
         const start = fetch(url, {
             method: 'PATCH',
         });
 
-        return (await start).json() as Promise<IDrive>;
+        return start;
     }
 
     async getWinners(limit?: number, page?: number, sort?: 'id' | 'wins' | 'time', order?: 'ASC' | 'DESC'): Promise<IWinner[]> {

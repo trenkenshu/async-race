@@ -33,4 +33,5 @@ export interface IGarage {
     setName: (arg: string) => void;
     refreshCars: (page: number, api: Rest, setCars: (arg: ICar[]) => void) => void;
     curentPageNum: number;
+    raceArr: Promise<IRace>[];
 }

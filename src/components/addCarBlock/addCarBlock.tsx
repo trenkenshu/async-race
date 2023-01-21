@@ -28,10 +28,10 @@ const AddCarBlock = () => {
                     refreshCars(curentPageNum, api, setCars);
             })
         } else {
-            api.updateCar(selectedCar.id,
+            api.updateCar(
+                selectedCar.id,
                 color,
                 name).then(() => {
-
                 setSelectedCar(emptyCar);
                 setColor('');
                 setName('');
@@ -50,6 +50,7 @@ const AddCarBlock = () => {
 
     return (
         <div className="addCarBlock">
+            <h3 className="header-3">New/Edit Car</h3>
             <div className="addOneCar">
                 <input type="text" value={name} placeholder="Enter Car Name" ref={inputName} onChange={(event) => {
                     setName(event.target.value);
@@ -66,13 +67,16 @@ const AddCarBlock = () => {
                     </div>
                 </div>
                 <div className="colorButtons">
-                    <button onClick={saveAddCar}>{selectedCar.id ? 'Save Car' : 'Add car'}</button>
-                    <button style={{display: selectedCar.id ? 'inline' : 'none'}}
+                    <button className="btn"
+                        onClick={saveAddCar}
+                        disabled={!(color !== '' && name !== '')}>{selectedCar.id ? 'Save Car' : 'Add car'}</button>
+                    <button className="btn" style={{display: selectedCar.id ? 'inline' : 'none'}}
                         onClick={cancelEdit}>Cancel</button>
                 </div>
             </div>
             <div className="add100Cars">
-                <button onClick={make100cars}>Add 100 random cars</button>
+                <h3 className="header-3">Add random cars</h3>
+                <button className="btn" onClick={make100cars}>Add 100 random cars</button>
             </div>
 
         </div>
