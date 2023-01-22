@@ -154,7 +154,7 @@ export default class Rest {
         return start;
     }
 
-    async getWinners(limit?: number, page?: number, sort?: 'id' | 'wins' | 'time', order?: 'ASC' | 'DESC'): Promise<IWinner[]> {
+    async getWinners(limit?: number, page?: number, sort?: 'id' | 'wins' | 'time', order?: 'ASC' | 'DESC'): Promise<Response> {
         const url = new URL('http://localhost:3000/winners');
         limit && url.searchParams.set('_limit', limit.toString());
         page && url.searchParams.set('_page', page.toString());
@@ -167,7 +167,7 @@ export default class Rest {
             if(!data.ok) console.log('get winners error', data);
         });
 
-        return (await winners).json();
+        return winners;
     }
 
     async createWinner(id: number, wins: number, time: number): Promise<IWinner> {

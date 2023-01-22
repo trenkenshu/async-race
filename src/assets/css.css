@@ -253,6 +253,21 @@ input {
     color: rgb(0, 0, 0);
 }
 
+/* Winners */
+.tableLine {
+    margin: 0 auto;
+    width: 50%;
+    display: flex;
+    line-height: 2rem;
+    /* justify-content: space-around; */
+}
+
+.tableItem {
+    /* border: 1px solid red; */
+    flex: 1;
+    text-align: center;
+}
+
 @media (max-width: 1000px) {
     .svg {
         width: 10%;

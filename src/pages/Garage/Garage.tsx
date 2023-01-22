@@ -82,8 +82,8 @@ const Garage = () => {
 
     const checkAndAdd = (id: number) => {
         if(rs.finished.length === 1) {
+            alert((cars.find(e => e.id === id)?.name) + ' won in ' + rs.timeToFinish[id] + 'sec');
             api.getOneResponse(id, 'winners').then((data) => {
-                console.log(data);
                 if(data.status == 404) {
                     api.createWinner(id, 1, rs.timeToFinish[id]).then(winner => {
                         console.log('create winner on finish', winner);
@@ -93,7 +93,6 @@ const Garage = () => {
                         const newTime = rs.timeToFinish[id] > json.time
                         ? json.time
                         : rs.timeToFinish[id];
-                        
                         console.log('existing winner', json, newTime);
                         api.updateWinner(id, json.wins + 1, newTime);
                     })
@@ -110,8 +109,8 @@ const Garage = () => {
             const el = document.querySelector(`#car-${id}`) as HTMLElement;
             const numerical = Number(el.style.left.slice(0, -1));
             if(el) el.style.left = position[id].position.toString() + '%';
-            if(el && numerical > 90) {
-                el.style.left = '90%';
+            if(el && numerical > 90 && !rs.crash.includes(id)) {
+               // el.style.left = '90%';
                 clearInterval(position[id].interval);
                 console.log('disabled on finish');
                 rs.raceNow.includes(id) && rs.finished.push(id);
@@ -128,14 +127,13 @@ const Garage = () => {
     //////////////// SINGLE RACE ////////////////////////
 
     const singleCarRace = (id: number, raceNow: number[]) => {
-        let speed: number = 0;
         !raceNow.includes(id) && raceNow.push(id);
         const receResult = api.startEngine(id)
             .then((data) => {
                 // console.log('starrt log', raceNow);
                 setStarted((prev: number[]) => add(prev, id));
                 rs.timeToFinish[id] = Number((data.distance / data.velocity / 900).toFixed(2));
-                console.log('time if finish',rs.timeToFinish[id]);
+                console.log(id, 'time if finish',rs.timeToFinish[id]);
                 setPosition(prev => {
                     prev[id] = {
                         interval: window.setInterval(() => {
@@ -165,11 +163,12 @@ const Garage = () => {
 
                         return prev;
                     });
+                } else if(res.status == 404) {
+                    console.log('double start', id)
                 } else {
                     //console.log('гуд log', raceNow, id, started)
                     raceNow.includes(id) && setDrive((prev: number[]) => add(prev, id));
                 }
-                // return res.json() as Promise<IDrive>
             })
     }
 
@@ -332,6 +331,8 @@ const Garage = () => {
                     )
                 })
             }</div>
+            <div className="modal">
+            </div>
         </>
         </GarageContext.Provider>
     );
