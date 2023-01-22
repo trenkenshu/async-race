@@ -11,6 +11,13 @@ export interface IRace extends Record<string, number> {
     distance: number;
 }
 
+export interface IRaceState extends Record<string, number[]> {
+    raceNow: number[];
+    crash: number[];
+    timeToFinish: number[];
+    finished: number[];
+}
+
 export interface IDrive extends Record<string, boolean> {
     success: boolean;
 }
@@ -34,4 +41,10 @@ export interface IGarage {
     refreshCars: (page: number, api: Rest, setCars: (arg: ICar[]) => void) => void;
     curentPageNum: number;
     raceArr: Promise<IRace>[];
+    raceNow: number[];
+    rs: IRaceState;
+    started: number[];
+    singleCarRace: (arg: number, raceNow: number[]) => void;
+    singleCarStop: (id: number, rs: IRaceState) => void;
+
 }

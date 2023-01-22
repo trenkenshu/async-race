@@ -16,7 +16,20 @@ export default class Rest {
         return (await car).json() as Promise<T>;
     }
 
-    async deleteOne(id: number, from: 'garage' | 'winners'): Promise<object> {
+    async getOneResponse(id: number, from: 'garage' | 'winners'): Promise<Response> {
+        const url = new URL(`http://localhost:3000/${from}/${id.toString()}`)
+        const car = fetch(url, {
+            method: 'GET',
+        });
+
+        car.then(data => {
+            if(!data.ok) console.log('get response error', data);
+        });
+
+        return car as Promise<Response>;
+    }
+
+    async deleteOne(id: number, from: 'garage' | 'winners'): Promise<Response> {
         const url = new URL(`http://localhost:3000/${from}/${id.toString()}`)
         const car = fetch(url, {
                 method: 'DELETE',
@@ -25,7 +38,7 @@ export default class Rest {
         car.then(data => {
             if(!data.ok) console.log('delete error', data);
         });
-        return car && (await car).json() as Promise<object>;
+        return car;
     }
 
     async getCars(page?: number, limit?: number): Promise<Response> {

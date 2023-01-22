@@ -1,14 +1,25 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Rest from '../../api/rest';
-import { ICar, IDrive, IGarage, IRace, IWinner } from '../../interface/interface';
+import { ICar, IDrive, IGarage, IRace, IRaceState, IWinner } from '../../interface/interface';
 import AddCarBlock from '../../components/addCarBlock';
 import CarImg from '../../assets/car2.svg';
 import GarageContext from '../../context/garageContext';
 import { addAbortSignal } from 'stream';
+import RaceBlock from '../../components/raceBlock';
 
 const api = new Rest();
-
+const raceArr: Promise<IRace>[] = [];
+const rs: IRaceState = {
+    raceNow: [],
+    crash: [],
+    timeToFinish: [],
+    finished : [],
+};
+const raceNow: number[] = [];
+const crash: number[] = [];
+const timeToFinish: number[] = [];
+const finish: number[] = [];
 
 const Garage = () => {
     const emptyCar = {id: 0, name: '', color: ''};
@@ -25,7 +36,7 @@ const Garage = () => {
     const [position, setPosition] = useState<{interval: number, position: number}[]>([]);
     const [animation, setAnimation] = useState<any[]>([]);
 
-    const raceArr: Promise<IRace>[] = [];
+
 
     const track = document.querySelector('.racingTrack') as HTMLDivElement;
 
@@ -48,6 +59,159 @@ const Garage = () => {
         refreshCars(curentPageNum, api, setCars);
     }, []);
 
+    /////////////// ADD ////////////////////////
+
+    const add = (prev: number[], id: number) => {
+        const next = prev.slice(0);
+        next.push(id);
+
+        return next;
+    };
+
+    ///////////////// REMOVE ///////////////////
+
+    const remove = (prev: number[], id: number) => {
+        const next = prev.slice(0);
+        const ind = next.indexOf(id);
+        next.splice(ind, 1);
+
+        return next;
+    }
+
+    //////////// CHECK AND ADD-UPDATE WINNER /////////////
+
+    const checkAndAdd = (id: number) => {
+        if(rs.finished.length === 1) {
+            api.getOneResponse(id, 'winners').then((data) => {
+                console.log(data);
+                if(data.status == 404) {
+                    api.createWinner(id, 1, rs.timeToFinish[id]).then(winner => {
+                        console.log('create winner on finish', winner);
+                    });
+                } else {
+                    data.json().then(json => {
+                        const newTime = rs.timeToFinish[id] > json.time
+                        ? json.time
+                        : rs.timeToFinish[id];
+                        
+                        console.log('existing winner', json, newTime);
+                        api.updateWinner(id, json.wins + 1, newTime);
+                    })
+                }
+
+
+            })
+        }
+    }
+
+    ////////////////// ANIMATE //////////////////////
+
+    const animate = (id: number, rs: IRaceState) => {
+            const el = document.querySelector(`#car-${id}`) as HTMLElement;
+            const numerical = Number(el.style.left.slice(0, -1));
+            if(el) el.style.left = position[id].position.toString() + '%';
+            if(el && numerical > 90) {
+                el.style.left = '90%';
+                clearInterval(position[id].interval);
+                console.log('disabled on finish');
+                rs.raceNow.includes(id) && rs.finished.push(id);
+                checkAndAdd(id);
+            } else if(rs.crash.includes(id)) {
+                clearInterval(position[id].interval);
+                console.log('disabled on crush')
+            } else {
+                window.requestAnimationFrame(() => animate(id, rs));
+            }
+
+        }
+
+    //////////////// SINGLE RACE ////////////////////////
+
+    const singleCarRace = (id: number, raceNow: number[]) => {
+        let speed: number = 0;
+        !raceNow.includes(id) && raceNow.push(id);
+        const receResult = api.startEngine(id)
+            .then((data) => {
+                // console.log('starrt log', raceNow);
+                setStarted((prev: number[]) => add(prev, id));
+                rs.timeToFinish[id] = Number((data.distance / data.velocity / 900).toFixed(2));
+                console.log('time if finish',rs.timeToFinish[id]);
+                setPosition(prev => {
+                    prev[id] = {
+                        interval: window.setInterval(() => {
+                            prev[id].position += (data.velocity / data.distance) * 450;
+                        }, 1),
+                        position: 0
+                    };
+                    return prev;
+                });
+
+                setAnimation(prev => {
+                    const go = requestAnimationFrame(() => { animate(id, rs)});
+                    prev[id] = {anim: go, id: id};
+
+                    return prev;
+                });
+
+                return api.driveEngine(id);
+            })
+            .then((res: Response) => {
+                if(res.status == 500) {
+                    //console.log('брокен log', raceNow, id, started)
+                    raceNow.includes(id) && setCrashed((prev: number[]) => add(prev, id));
+                    raceNow.includes(id) && rs.crash.push(id);
+                    setPosition(prev => {
+                        clearInterval(prev[id].interval);
+
+                        return prev;
+                    });
+                } else {
+                    //console.log('гуд log', raceNow, id, started)
+                    raceNow.includes(id) && setDrive((prev: number[]) => add(prev, id));
+                }
+                // return res.json() as Promise<IDrive>
+            })
+    }
+
+    ///////////////// SINGLE STOP ///////////////////////////
+
+    const singleCarStop = (id: number, rs: IRaceState) => {
+        let ind = rs.raceNow.indexOf(id);
+        rs.raceNow.splice(ind, 1);
+        ind = rs.finished.indexOf(id);
+        rs.finished.splice(ind, 1);
+        ind = rs.crash.indexOf(id);
+        rs.crash.splice(ind, 1);
+        delete rs.timeToFinish[id];
+        console.log(rs);
+
+        api.stopEngine(id).then(() => {
+            setStarted((prev: number[]) => remove(prev, id));
+            setDrive((prev: number[]) => remove(prev, id));
+            setCrashed((prev: number[]) => remove(prev, id));
+
+            setAnimation(prev => {
+                const ind = animation
+                cancelAnimationFrame(animation[id]?.go);
+                prev[id] && prev.splice(id, 1);
+
+                return prev;
+            });
+
+            setPosition(prev => {
+
+                window.clearInterval(prev[id].interval);
+                prev[id].position = 0;
+                const el = document.querySelector(`#car-${id}`) as HTMLElement;
+                if(el) el.style.left = '0px';
+                return prev;
+            });
+
+        });
+    }
+
+    ////////////////// CONTEXT ////////////////
+
     const garageVals:IGarage = {
         cars,
         emptyCar,
@@ -60,34 +224,13 @@ const Garage = () => {
         setName,
         refreshCars,
         curentPageNum,
-        raceArr
+        raceArr,
+        singleCarRace,
+        singleCarStop,
+        raceNow,
+        started,
+        rs
     }
-
-    const add = (prev: number[], id: number) => {
-        const next = prev.slice(0);
-        next.push(id);
-
-        return next;
-    };
-
-    const remove = (prev: number[], id: number) => {
-        const next = prev.slice(0);
-        const ind = next.indexOf(id);
-        next.splice(ind, 1);
-
-        return next;
-    }
-
-    const animate = (id: number) => {
-        const el = document.querySelector(`#car-${id}`) as HTMLElement;
-        if(el) el.style.left = position[id].position.toString() + '%';
-        if(el && Number(el.style.left.slice(0, -1)) > 90) {
-            el.style.left = '90%';
-        } else {
-            window.requestAnimationFrame(() => animate(id));
-        }
-    }
-
 
     return (
         <GarageContext.Provider value={garageVals}>
@@ -95,15 +238,16 @@ const Garage = () => {
             <h1 className='header' >Garage <span>{total ? `(${total})` : ''}</span></h1>
             <div style={{height: '2rem'}}>Go to <Link className='link' to="/winners">Winners</Link></div>
             <AddCarBlock />
+            <RaceBlock />
             <div className="racingTrack">{ cars.map(item => {
 
                 return (<div className='singleTrack' key={item.id} onClick={() => {
                 }}>
                             <div className='singleCarName'>
-                                {item.name} <span className="started">{(started.indexOf(item.id) >= 0
+                                {item.id} {item.name}<span className="started">{(started.indexOf(item.id) >= 0
                                     ? 'started'
                                     : '')}</span> <span className="drive">{(drive.indexOf(item.id) >= 0
-                                        ? 'drive'
+                                        ? 'ok'
                                         : '')}</span><span className="crashed">{(crashed.indexOf(item.id) >= 0
                                             ? 'crashed'
                                             : '')}</span>
@@ -119,105 +263,60 @@ const Garage = () => {
                                     className="btn">Edit car
                                 </button>
 
-                                <button onClick={() => {
-                                        api.deleteOne(item.id, 'garage').then(() => {
-                                            if(cars.length === 1) {
-                                                setCurentPageNum(prev =>  prev- 1);
-                                                refreshCars(pages.length - 1, api, setCars);
-                                            } else {
-                                                refreshCars(curentPageNum, api, setCars);
-                                            }
-                                        })
-                                    }}
-                                    className="btn">Delete
-                                </button>
-
-                                <button onClick={() => {
-                                        return api.startEngine(item.id)
-                                            .then((data) => {
-                                                setStarted((prev: number[]) => add(prev, item.id));
-                                                console.log(data);
-                                                setPosition(prev => {
-                                                    prev[item.id] = {
-                                                        interval: window.setInterval(() => {
-                                                            prev[item.id].position += (data.velocity / data.distance) * 1000;
-                                                            // console.log(prev[item.id]);
-                                                        }, 20),
-                                                        position: 0
-                                                    };
-                                                    return prev;
-                                                });
-                                                // const go = requestAnimationFrame(() => { animate(item.id)});
-                                                // animation[item.id] = go;
-                                                setAnimation(prev => {
-                                                    const go = window.requestAnimationFrame(() => { animate(item.id)});
-                                                    prev.push({anim: go, id: item.id});
-                                                    console.log(prev);
-
-                                                    return prev;
-                                                });
-                                                return api.driveEngine(item.id);
-
-                                            }).then((res: Response) => {
-                                                if(res.status == 500) {
-                                                    //setCrashed((prev: number[]) => add(prev, item.id));
-                                                    setPosition(prev => {
-                                                        clearInterval(prev[item.id].interval);
-
-                                                        return prev;
-                                                    });
-                                                } else {
-                                                    if(started.includes(item.id)) setDrive((prev: number[]) => add(prev, item.id));
-                                                    //const interval = setInterval(animate, 1);
+                                <button
+                                    onClick={() => {
+                                        api.deleteOne(item.id, 'garage')
+                                            .then(data => {
+                                                console.log('deleted ', data);
+                                                return api.getOneResponse(item.id, 'winners')})
+                                            .then(res => {
+                                                if(res.status === 200) {
+                                                    api.deleteOne(item.id, 'winners');
                                                 }
-                                                return res.json() as Promise<IDrive>
+
+                                                if(cars.length === 1) {
+                                                    setCurentPageNum(prev =>  prev- 1);
+                                                    refreshCars(pages.length - 1, api, setCars);
+                                                } else {
+                                                    refreshCars(curentPageNum, api, setCars);
+                                                }
                                             })
                                     }}
+                                    className="btn">
+
+                                    Delete
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        singleCarRace(item.id, rs.raceNow);
+                                    }}
                                     disabled={started.includes(item.id)}
-                                    className="btn">Start
+                                    className="btn">
+
+                                    Start
                                 </button>
 
                                 <button onClick={() => {
-                                        api.stopEngine(item.id).then(() => {
-                                            setStarted((prev: number[]) => remove(prev, item.id));
-                                            setDrive((prev: number[]) => remove(prev, item.id));
-                                            setCrashed((prev: number[]) => remove(prev, item.id));
-                                            setPosition(prev => {
-                                                clearInterval(prev[item.id].interval);
-                                                prev[item.id].position = 0;
-                                                const el = document.querySelector(`#car-${item.id}`) as HTMLElement;
-                                                console.log(el);
-                                                if(el) el.style.left = '0px';
-                                                return prev;
-                                            });
-
-                                        });
-                                        // cancelAnimationFrame(animation[item.id]);
-                                        //window.cancelAnimationFrame(animation.find(el => el.id === item.id).anim);
-                                        // setAnimation(prev => {
-                                        //     console.log(prev.find(el => el.id === item.id));
-                                        //     const go = prev.find(el => el.id === item.id).anim;
-                                        //     window.cancelAnimationFrame(go);
-
-                                        //     return prev;
-                                        // });
-
+                                        cancelAnimationFrame(animation[item.id]);
+                                        singleCarStop(item.id, rs);
                                     }}
                                     disabled={!started.includes(item.id)}
-                                    className="btn">Stop
-                                </button>
+                                    className="btn">
 
+                                    Return
+                                </button>
                             </div>
+
                             <CarImg id={'car-' + item.id.toString()}
-                            className='svg'
-                            fill={item.color}
-                            style={{width: track
-                                ? track.offsetWidth / 11 + 'px'
-                                : '100px'}}
+                                className='svg'
+                                fill={item.color}
                                 />
+
                             <div className="finish"></div>
                     </div>)
             })}</div>
+
             <div className="pagination">{
                 pages.map(i => {
                     return (

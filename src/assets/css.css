@@ -158,13 +158,13 @@ input {
     margin: 1rem;
 }
 .singleTrack {
-    height: 5rem;
+    height: 7rem;
     position: relative;
     overflow: hidden;
 }
 .editCar {
-    display: none;
-    position: absolute;
+    display: block;
+    /* position: absolute; */
     z-index: 1000;
     left: 15rem;
     top: 0;
@@ -253,3 +253,8 @@ input {
     color: rgb(0, 0, 0);
 }
 
+@media (max-width: 1000px) {
+    .svg {
+        width: 10%;
+    }
+}
