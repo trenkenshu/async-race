@@ -189,7 +189,7 @@ input {
     margin-top: 0.7rem;
 }
 .svg {
-    width: 110px;
+    width: 8%;
     height: 70px;
     position: relative;
 }
@@ -205,13 +205,32 @@ input {
 .page {
     margin: 0 10px;
 }
+.modal {
+    position: fixed;
+    font-size: 20px;
+    width: 20%;
+    height: 20%;
+    top: 100vh;
+    left: 40vw;
+    transition: all ease-out 0.6s;
+    line-height: 150px;
+    background: #555;
+    text-align: center;
+    z-index: 1000;
+}
+.modal.active {
+    top: 45vh;
+}
 
 /* addCarBlock */
 .addCarBlock {
-    margin: 2rem;
+    margin: 1rem;
 }
 .addOneCar {
     position: relative;
+}
+.raceBlock {
+    margin: 1rem;
 }
 .colorPickerWindow {
     position: absolute;
@@ -232,6 +251,11 @@ input {
 }
 
 /* Race block */
+.singleTrack {
+    padding: 7px 0;
+    border-top: 1px dotted #333;
+    border-bottom: 1px dotted #333;
+}
 .started {
     font-size: 0.7rem;
     line-height: 1rem;
@@ -256,20 +280,76 @@ input {
 /* Winners */
 .tableLine {
     margin: 0 auto;
-    width: 50%;
+    width: 70%;
+    max-width: 1200px;
     display: flex;
     line-height: 2rem;
+    border: 1px dashed #333;
     /* justify-content: space-around; */
+}
+.tableLine.head {
+    text-transform: uppercase;
+    font-weight: 800;
+    background: #1c1c1c;
 }
 
 .tableItem {
-    /* border: 1px solid red; */
     flex: 1;
     text-align: center;
+    position: relative;
+    user-select: none;
+    align-self: center;
+}
+
+.tableItem.flex2 {
+    flex: 2;
+}
+
+.tableItem.flex3 {
+    flex: 3;
+}
+
+.tableItem.search {
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.tableItem .svg {
+    width: 60%;
+}
+.asc-desc {
+    position: absolute;
+    right: 5%;
+    top: 0;
+    font-size: 0.55rem;
+}
+.tableItem.search:hover {
+    background: #111;
+}
+
+.tableItem.search:active {
+    background: #000;
 }
 
 @media (max-width: 1000px) {
     .svg {
-        width: 10%;
+        width: 8%;
     }
+
+    .tableLine {
+        font-size: 0.7rem;
+        text-align: left;
+        width: 95%;
+    }
+    .tableItem {
+        text-align: left;
+        padding-left: 3%;
+    }
+    .tableItem .svg {
+        width: 60%;
+    }
+    .asc-desc {
+        font-size: 0.35rem;
+    }
+
 }

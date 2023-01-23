@@ -1,43 +1,42 @@
-import { ICar, IDrive, IRace, IWinner } from '../../interface/interface';
+import { ICar, IRace, IWinner } from '../../interface/interface';
 import { brand, model } from '../../car-data/base';
 
 export default class Rest {
-
     async getOne<T>(id: number, from: 'garage' | 'winners'): Promise<T> {
-        const url = new URL(`http://localhost:3000/${from}/${id.toString()}`)
+        const url = new URL(`http://localhost:3000/${from}/${id.toString()}`);
         const car = fetch(url, {
             method: 'GET',
         });
 
-        car.then(data => {
-            if(!data.ok) console.log('get error', data);
-        });
+        car.then((data) => {
+            if (!data.ok) console.log('get error', data);
+        }).catch((err: Error) => console.log(err.message));
 
         return (await car).json() as Promise<T>;
     }
 
     async getOneResponse(id: number, from: 'garage' | 'winners'): Promise<Response> {
-        const url = new URL(`http://localhost:3000/${from}/${id.toString()}`)
+        const url = new URL(`http://localhost:3000/${from}/${id.toString()}`);
         const car = fetch(url, {
             method: 'GET',
         });
 
-        car.then(data => {
-            if(!data.ok) console.log('get response error', data);
-        });
+        car.then((data) => {
+            if (!data.ok) console.log('get response error', data);
+        }).catch((err: Error) => console.log(err.message));
 
-        return car as Promise<Response>;
+        return car;
     }
 
     async deleteOne(id: number, from: 'garage' | 'winners'): Promise<Response> {
-        const url = new URL(`http://localhost:3000/${from}/${id.toString()}`)
+        const url = new URL(`http://localhost:3000/${from}/${id.toString()}`);
         const car = fetch(url, {
-                method: 'DELETE',
-            });
-
-        car.then(data => {
-            if(!data.ok) console.log('delete error', data);
+            method: 'DELETE',
         });
+
+        car.then((data) => {
+            if (!data.ok) console.log('delete error', data);
+        }).catch((err: Error) => console.log(err.message));
         return car;
     }
 
@@ -80,9 +79,9 @@ export default class Rest {
             color =
                 color.length < 7
                     ? color +
-                    Array(7 - color.length)
-                        .fill('f')
-                        .toString()
+                      Array(7 - color.length)
+                          .fill('f')
+                          .toString()
                     : color;
             const request: { [key: string]: string } = {
                 name: `${brand[Math.floor(Math.random() * brand.length)]} ${
@@ -154,7 +153,12 @@ export default class Rest {
         return start;
     }
 
-    async getWinners(limit?: number, page?: number, sort?: 'id' | 'wins' | 'time', order?: 'ASC' | 'DESC'): Promise<Response> {
+    async getWinners(
+        limit?: number,
+        page?: number,
+        sort?: 'id' | 'wins' | 'time',
+        order?: 'ASC' | 'DESC'
+    ): Promise<Response> {
         const url = new URL('http://localhost:3000/winners');
         limit && url.searchParams.set('_limit', limit.toString());
         page && url.searchParams.set('_page', page.toString());
@@ -163,9 +167,11 @@ export default class Rest {
         const winners = fetch(url, {
             method: 'GET',
         });
-        winners.then(data => {
-            if(!data.ok) console.log('get winners error', data);
-        });
+        winners
+            .then((data) => {
+                if (!data.ok) console.log('get winners error', data);
+            })
+            .catch((err: Error) => console.log(err.message));
 
         return winners;
     }
@@ -183,9 +189,11 @@ export default class Rest {
             },
             body: JSON.stringify(request),
         });
-        winner.then(data => {
-            if(!data.ok) console.log('create winner error', data);
-        });
+        winner
+            .then((data) => {
+                if (!data.ok) console.log('create winner error', data);
+            })
+            .catch((err: Error) => console.log(err.message));
 
         return (await winner).json() as Promise<IWinner>;
     }
@@ -195,7 +203,7 @@ export default class Rest {
             wins,
             time,
         };
-        const url = new URL(`http://localhost:3000/winners/${id.toString()}`)
+        const url = new URL(`http://localhost:3000/winners/${id.toString()}`);
         const winner = fetch(url, {
             method: 'PUT',
             headers: {
@@ -206,6 +214,4 @@ export default class Rest {
 
         return (await winner).json() as Promise<IWinner>;
     }
-
 }
-
