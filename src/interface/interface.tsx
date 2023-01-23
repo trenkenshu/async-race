@@ -1,4 +1,4 @@
-import Rest from "../api/rest";
+import Rest from '../api/rest';
 
 export interface ICar extends Record<string, number | string> {
     name: string;
@@ -46,5 +46,48 @@ export interface IGarage {
     started: number[];
     singleCarRace: (arg: number, raceNow: number[]) => void;
     singleCarStop: (id: number, rs: IRaceState) => void;
+}
 
+export interface IReducerState {
+    raceNow: boolean[];
+    crash: boolean[];
+    drive: boolean[];
+    timeToFinish: number[];
+    finished: number;
+    selectedCar: ICar;
+    inputs: {
+        name: string;
+        color: string;
+    };
+    totalCars: number;
+    position: {
+        interval: number[];
+        position: number[];
+    };
+    garagePageNum: number;
+    garageTotalPages: number;
+}
+
+export interface IReducerAction {
+    type:
+        | 'addRace'
+        | 'removeRace'
+        | 'addCrash'
+        | 'removeCrash'
+        | 'addDrive'
+        | 'removeDrive'
+        | 'setFinish'
+        | 'setTimeToFinish'
+        | 'selectCar'
+        | 'setTotalCars'
+        | 'setInputName'
+        | 'setInputColor'
+        | 'setPosInterval'
+        | 'setPosPosition'
+        | 'setGaragePageNum'
+        | 'setGarageTotalPages';
+    id: number;
+    value?: string | number | boolean;
+    car?: ICar;
+    raceData?: IRace;
 }
