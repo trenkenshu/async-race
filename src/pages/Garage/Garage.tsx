@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+import React, { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Rest from '../../api/rest';
-import { ICar, IGarage, IRace, IRaceState, IWinner } from '../../interface/interface';
+import { ICar, IGarage, IRace, IRaceState, IReducerState, IWinner } from '../../interface/interface';
 import AddCarBlock from '../../components/addCarBlock';
 import CarImg from '../../assets/car2.svg';
 import GarageContext from '../../context/garageContext';
 import RaceBlock from '../../components/raceBlock';
+import { ReducerContext } from '../../components/App/App';
+import { finished } from 'stream';
 
 const api = new Rest();
 const raceArr: Promise<IRace>[] = [];
@@ -18,38 +21,43 @@ const rs: IRaceState = {
 const raceNow: number[] = [];
 
 const Garage = () => {
+    const { reducerState, dispatch } = useContext(ReducerContext);
     const emptyCar = { id: 0, name: '', color: '' };
     const [cars, setCars] = useState<ICar[]>([]);
-    const [selectedCar, setSelectedCar] = useState(emptyCar);
-    const [color, setColor] = useState('');
-    const [name, setName] = useState('');
-    const [pages, setPages] = useState<number[]>([]);
+    const [selectedCar, setSelectedCar] = useState(reducerState.selectedCar);
+    const [color, setColor] = useState(reducerState.inputs.color);
+    const [name, setName] = useState(reducerState.inputs.name);
+    //const [pages, setPages] = useState<number[]>([]);
     const [curentPageNum, setCurentPageNum] = useState(1);
-    const [total, setTotal] = useState(0);
+    //const [total, setTotal] = useState(0);
     const [started, setStarted] = useState<number[]>([]);
     const [drive, setDrive] = useState<number[]>([]);
     const [crashed, setCrashed] = useState<number[]>([]);
     const [position, setPosition] = useState<{ interval: number; position: number }[]>([]);
-    //const [animation, setAnimation] = useState<any[]>([]);
+
+    //////////////// LOAD AND REFRESH ////////////////
 
     const refreshCars = (page: number, api: Rest, setCars: (arg: ICar[]) => void) => {
         api.getCars(page, 7)
             .then((response) => {
                 const totalCars = Number(response.headers.get('X-Total-Count'));
-                setTotal(totalCars);
+                dispatch({ type: 'setTotalCars', value: totalCars, id: 0 });
                 const pagesCount = Math.ceil(totalCars / 7);
-                setPages(Array.from({ length: pagesCount }).map((item, index) => index + 1));
+                dispatch({
+                    type: 'setGarageTotalPages',
+                    pages: Array.from({ length: pagesCount }).map((item, index) => index + 1),
+                    id: 0,
+                });
                 return response.json();
             })
             .then((data: ICar[]) => {
                 setCars(data);
-                //console.log('initial getCars', data);
             })
             .catch((err: Error) => console.log('initial getCars error', err.message));
     };
 
     useEffect(() => {
-        refreshCars(curentPageNum, api, setCars);
+        refreshCars(reducerState.garagePageNum, api, setCars);
     }, []);
 
     /////////////// ADD ////////////////////////
@@ -74,54 +82,67 @@ const Garage = () => {
     //////////// CHECK AND ADD-UPDATE WINNER /////////////
 
     const checkAndAdd = (id: number) => {
-        if (rs.finished.length === 1) {
+        console.log(reducerState.finished, id);
+        if (id) {
+            /////////// MODAL ////////////////
+
             const modal = document.querySelector('.modal') as HTMLDivElement;
-            console.log(modal);
             if (modal) {
-                modal.classList.toggle('active');
+                modal.classList.add('active');
                 modal.innerHTML =
-                    String(cars.find((e) => e.id === id)?.name) + ' won in ' + rs.timeToFinish[id].toString() + 'sec';
-                setTimeout(() => modal.classList.toggle('active'), 2000);
-            } //alert(String(cars.find((e) => e.id === id)?.name) + ' won in ' + rs.timeToFinish[id].toString() + 'sec');
-            api.getOneResponse(id, 'winners')
-                .then((data) => {
-                    if (data.status == 404) {
-                        api.createWinner(id, 1, rs.timeToFinish[id])
-                            .then((winner) => {
-                                console.log('create winner on finish', winner);
-                            })
-                            .catch((err: Error) => console.log(err.message));
-                    } else {
-                        data.json()
-                            .then((json: IWinner) => {
-                                const newTime = rs.timeToFinish[id] > json.time ? json.time : rs.timeToFinish[id];
-                                console.log('existing winner', json, newTime);
-                                api.updateWinner(id, json.wins + 1, newTime).catch((err: Error) =>
-                                    console.log(err.message)
-                                );
-                            })
-                            .catch((err: Error) => console.log(err.message));
-                    }
-                })
-                .catch((err: Error) => console.log(err.message));
+                    String(cars.find((e) => e.id === id)?.name) +
+                    ' won in ' +
+                    reducerState.timeToFinish[id].toString() +
+                    'sec';
+                setTimeout(() => modal.classList.remove('active'), 4000);
+            }
+
+            // api.getOneResponse(id, 'winners')
+            //     .then((data) => {
+            //         if (data.status == 404) {
+            //             api.createWinner(id, 1, reducerState.timeToFinish[id])
+            //                 .then((winner) => {
+            //                     console.log('create winner on finish', winner);
+            //                 })
+            //                 .catch((err: Error) => console.log(err.message));
+            //         } else {
+            //             data.json()
+            //                 .then((json: IWinner) => {
+            //                     const newTime =
+            //                         reducerState.timeToFinish[id] > json.time
+            //                             ? json.time
+            //                             : reducerState.timeToFinish[id];
+            //                     console.log('existing winner', json, newTime);
+            //                     api.updateWinner(id, json.wins + 1, newTime).catch((err: Error) =>
+            //                         console.log(err.message)
+            //                     );
+            //                 })
+            //                 .catch((err: Error) => console.log(err.message));
+            //         }
+            //     })
+            //     .catch((err: Error) => console.log(err.message));
         }
     };
 
     ////////////////// ANIMATE //////////////////////
 
     const animate = (id: number, rs: IRaceState) => {
-        //console.log(rs);
         const el = document.querySelector(`#car-${id}`) as HTMLElement;
-        const numerical = Number(el.style.left.slice(0, -1));
-        if (el) el.style.left = position[id].position.toString() + '%';
-        if (el && numerical > 90 && !rs.crash.includes(id)) {
-            // el.style.left = '90%';
-            clearInterval(position[id].interval);
-            console.log('disabled on finish');
-            rs.raceNow.includes(id) && rs.finished.push(id);
-            checkAndAdd(id);
-        } else if (rs.crash.includes(id)) {
-            clearInterval(position[id].interval);
+
+        if (el && reducerState.position.position[id])
+            el.style.left = reducerState.position.position[id].toString() + '%';
+
+        if (el && reducerState.position.position[id] > 90 && !reducerState.crash[id]) {
+            //clearInterval(reducerState.position.interval[id]);
+            //console.log('disabled on finish');
+
+            if (reducerState.raceNow[id] && reducerState.position.position.filter((el) => el >= 90).length === 1) {
+                //dispatch({ type: 'setFinish', id: id });
+                checkAndAdd(id);
+            }
+        } else if (reducerState.crash[id]) {
+            clearInterval(reducerState.position.interval[id]);
+
             console.log('disabled on crush');
         } else {
             window.requestAnimationFrame(() => animate(id, rs));
@@ -131,13 +152,30 @@ const Garage = () => {
     //////////////// SINGLE RACE ////////////////////////
 
     const singleCarRace = (id: number, raceNow: number[]) => {
-        !raceNow.includes(id) && raceNow.push(id);
         api.startEngine(id)
             .then((data) => {
-                // console.log('starrt log', raceNow);
                 setStarted((prev: number[]) => add(prev, id));
+                !reducerState.raceNow[id] && dispatch({ type: 'addRace', id: id });
+                dispatch({
+                    type: 'setTimeToFinish',
+                    id: id,
+                    value: Number((data.distance / data.velocity / 900).toFixed(2)),
+                });
+
                 rs.timeToFinish[id] = Number((data.distance / data.velocity / 900).toFixed(2));
-                console.log(id, 'time if finish', rs.timeToFinish[id]);
+
+                dispatch({
+                    type: 'setPosPosition',
+                    id: id,
+                    value: 0,
+                });
+                dispatch({
+                    type: 'setPosInterval',
+                    id: id,
+                    raceData: data,
+                    cars: cars.slice(),
+                });
+
                 setPosition((prev) => {
                     prev[id] = {
                         interval: window.setInterval(() => {
@@ -151,22 +189,15 @@ const Garage = () => {
                 requestAnimationFrame(() => {
                     animate(id, rs);
                 });
-                // setAnimation((prev) => {
-                //     const go = requestAnimationFrame(() => {
-                //         animate(id, rs);
-                //     });
-                //     prev[id] = { anim: go, id: id };
-
-                //     return prev;
-                // });
 
                 return api.driveEngine(id);
             })
             .then((res: Response) => {
                 if (res.status == 500) {
-                    //console.log('брокен log', raceNow, id, started)
-                    raceNow.includes(id) && setCrashed((prev: number[]) => add(prev, id));
-                    raceNow.includes(id) && rs.crash.push(id);
+                    console.log('broken', id);
+                    reducerState.raceNow[id] && dispatch({ type: 'addCrash', id: id });
+                    reducerState.raceNow[id] && rs.crash.push(id);
+                    clearInterval(reducerState.position.interval[id]);
                     setPosition((prev) => {
                         clearInterval(prev[id].interval);
 
@@ -175,8 +206,7 @@ const Garage = () => {
                 } else if (res.status == 404) {
                     console.log('double start', id);
                 } else {
-                    //console.log('гуд log', raceNow, id, started)
-                    raceNow.includes(id) && setDrive((prev: number[]) => add(prev, id));
+                    reducerState.raceNow[id] && dispatch({ type: 'addDrive', id: id });
                 }
             })
             .catch((err: Error) => console.log(err.message));
@@ -187,37 +217,57 @@ const Garage = () => {
     const singleCarStop = (id: number, rs: IRaceState) => {
         let ind = rs.raceNow.indexOf(id);
         rs.raceNow.splice(ind, 1);
+
         ind = rs.finished.indexOf(id);
         rs.finished.splice(ind, 1);
         ind = rs.crash.indexOf(id);
         rs.crash.splice(ind, 1);
         delete rs.timeToFinish[id];
-        console.log(rs);
 
+        clearInterval(reducerState.position.interval[id]);
+
+        dispatch({
+            type: 'removeRace',
+            id: id,
+        });
+        dispatch({
+            type: 'removeDrive',
+            id: id,
+        });
+        dispatch({
+            type: 'removeCrash',
+            id: id,
+        });
+        dispatch({
+            type: 'setTimeToFinish',
+            id: 0,
+            value: 0,
+        });
         api.stopEngine(id)
             .then(() => {
+                dispatch({
+                    type: 'setPosPosition',
+                    id: id,
+                    value: 0,
+                });
+                const el = document.querySelector(`#car-${id}`) as HTMLElement;
+                if (el) el.style.left = '0px';
+
                 setStarted((prev: number[]) => remove(prev, id));
                 setDrive((prev: number[]) => remove(prev, id));
                 setCrashed((prev: number[]) => remove(prev, id));
 
-                // setAnimation((prev) => {
-                //     const ind = animation;
-                //     cancelAnimationFrame(animation[id]?.go);
-                //     prev[id] && prev.splice(id, 1);
+                // setPosition((prev) => {
+                //     //window.clearInterval(prev[id].interval);
+                //     prev[id].position = 0;
 
                 //     return prev;
                 // });
-
-                setPosition((prev) => {
-                    window.clearInterval(prev[id].interval);
-                    prev[id].position = 0;
-                    const el = document.querySelector(`#car-${id}`) as HTMLElement;
-                    if (el) el.style.left = '0px';
-                    return prev;
-                });
             })
             .catch((err: Error) => console.log(err.message));
     };
+
+    /////////////// SAVE/GET STATE ////////////////
 
     ////////////////// CONTEXT ////////////////
 
@@ -239,13 +289,21 @@ const Garage = () => {
         raceNow,
         started,
         rs,
+        reducerState,
+        dispatch,
     };
 
     return (
         <GarageContext.Provider value={garageVals}>
             <>
-                <h1 className="header">
-                    Garage <span>{total ? `(${total})` : ''}</span>
+                <h1
+                    className="header"
+                    onClick={() => {
+                        console.log(reducerState);
+                    }}
+                >
+                    Garage <span>{reducerState.totalCars ? `(${reducerState.totalCars})` : ''}</span>
+                    <span className="numPage">{reducerState.garagePageNum} page</span>
                 </h1>
                 <div style={{ height: '2rem' }}>
                     Go to{' '}
@@ -261,17 +319,38 @@ const Garage = () => {
                             <div className="singleTrack" key={item.id}>
                                 <div className="singleCarName">
                                     {item.id} {item.name}{' '}
-                                    <span className="started">{started.indexOf(item.id) >= 0 ? ' started' : ''}</span>{' '}
-                                    <span className="drive">{drive.indexOf(item.id) >= 0 ? 'ok' : ''}</span>
-                                    <span className="crashed">{crashed.indexOf(item.id) >= 0 ? 'crashed' : ''}</span>
+                                    <span className="started">
+                                        {reducerState.raceNow.find((i, ind) => ind === item.id) ? ' started' : ''}
+                                    </span>{' '}
+                                    <span className="drive">
+                                        {/*reducerState.drive.find((i, ind) => ind === item.id) ? 'ok' : ''*/}
+                                    </span>{' '}
+                                    <span className="crashed">
+                                        {reducerState.crash.find((i, ind) => ind === item.id) ? 'crashed' : ''}
+                                    </span>
                                 </div>
 
                                 <div className="editCar">
                                     <button
                                         onClick={() => {
                                             setSelectedCar(item);
+                                            dispatch({
+                                                type: 'selectCar',
+                                                id: 0,
+                                                car: item,
+                                            });
                                             setColor(item.color);
                                             setName(item.name);
+                                            dispatch({
+                                                type: 'setInputColor',
+                                                id: 0,
+                                                value: item.color,
+                                            });
+                                            dispatch({
+                                                type: 'setInputName',
+                                                id: 0,
+                                                value: item.name,
+                                            });
                                         }}
                                         className="btn"
                                     >
@@ -294,7 +373,11 @@ const Garage = () => {
 
                                                     if (cars.length === 1) {
                                                         setCurentPageNum((prev) => prev - 1);
-                                                        refreshCars(pages.length - 1, api, setCars);
+                                                        refreshCars(
+                                                            reducerState.garageTotalPages.length - 1,
+                                                            api,
+                                                            setCars
+                                                        );
                                                     } else {
                                                         refreshCars(curentPageNum, api, setCars);
                                                     }
@@ -310,7 +393,7 @@ const Garage = () => {
                                         onClick={() => {
                                             singleCarRace(item.id, rs.raceNow);
                                         }}
-                                        disabled={started.includes(item.id)}
+                                        disabled={reducerState.raceNow[item.id]}
                                         className="btn"
                                     >
                                         Start
@@ -318,17 +401,26 @@ const Garage = () => {
 
                                     <button
                                         onClick={() => {
-                                            //cancelAnimationFrame(animation[item.id]);
                                             singleCarStop(item.id, rs);
                                         }}
-                                        disabled={!started.includes(item.id)}
+                                        disabled={!reducerState.raceNow[item.id]}
                                         className="btn"
                                     >
-                                        Return
+                                        Stop
                                     </button>
                                 </div>
 
-                                <CarImg id={'car-' + item.id.toString()} className="svg" fill={item.color} />
+                                <CarImg
+                                    id={'car-' + item.id.toString()}
+                                    className="svg"
+                                    fill={item.color}
+                                    style={{
+                                        left:
+                                            reducerState.position.position[item.id] && reducerState.raceNow[item.id]
+                                                ? reducerState.position.position[item.id].toString() + '%'
+                                                : '0%',
+                                    }}
+                                />
 
                                 <div className="finish"></div>
                             </div>
@@ -337,14 +429,19 @@ const Garage = () => {
                 </div>
 
                 <div className="pagination">
-                    {pages.map((i) => {
+                    {reducerState.garageTotalPages.map((i) => {
                         return (
                             <span key={i * 100000}>
                                 <span
-                                    className={i !== curentPageNum ? 'page link' : 'page link active'}
+                                    className={i !== reducerState.garagePageNum ? 'page link' : 'page link active'}
                                     key={i}
                                     onClick={() => {
-                                        setCurentPageNum(i);
+                                        //setCurentPageNum(i);
+                                        dispatch({
+                                            value: i,
+                                            type: 'setGaragePageNum',
+                                            id: 0,
+                                        });
                                         refreshCars(i, api, setCars);
                                     }}
                                 >

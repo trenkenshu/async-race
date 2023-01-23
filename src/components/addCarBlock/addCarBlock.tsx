@@ -2,11 +2,13 @@ import React, { useContext, useRef, useState } from 'react';
 import Rest from '../../api/rest';
 import { HexColorPicker } from 'react-colorful';
 import garageContext from '../../context/garageContext';
+import { ReducerContext } from '../App/App';
 
 const api = new Rest();
 
 const AddCarBlock = () => {
-    const [colorPickerDisplay, setColorPickerDisplay] = useState<string>('none');
+    const { reducerState, dispatch } = useContext(ReducerContext);
+    const [colorPickerDisplay, setColorPickerDisplay] = useState<string>(reducerState.colorPickerDisplay);
     const inputName = useRef<HTMLInputElement | null>(null);
     const inputColor = useRef<HTMLInputElement | null>(null);
     const {
@@ -21,6 +23,7 @@ const AddCarBlock = () => {
         refreshCars,
         curentPageNum,
     } = useContext(garageContext);
+
     const make100cars = (): void => {
         api.newRandomCars(100)
             .then(() => {
@@ -33,30 +36,57 @@ const AddCarBlock = () => {
         if (selectedCar.id === 0) {
             api.createCar(color, name)
                 .then(() => {
-                    setName('');
-                    setColor('');
-                    setColorPickerDisplay('none');
-                    refreshCars(curentPageNum, api, setCars);
+                    refreshCars(reducerState.garagePageNum, api, setCars);
                 })
                 .catch((err: Error) => console.log(err.message));
         } else {
             api.updateCar(selectedCar.id, color, name)
                 .then(() => {
                     setSelectedCar(emptyCar);
-                    setColor('');
-                    setName('');
-                    refreshCars(curentPageNum, api, setCars);
-                    setColorPickerDisplay('none');
+                    dispatch({
+                        type: 'selectCar',
+                        id: 0,
+                        car: emptyCar,
+                    });
+                    refreshCars(reducerState.garagePageNum, api, setCars);
                 })
                 .catch((err: Error) => console.log(err.message));
         }
+        setName('');
+        setColor('');
+        setColorPickerDisplay('none');
+        dispatch({
+            type: 'setColorPickerDisplay',
+            id: 0,
+            value: 'none',
+        });
+        dispatch({
+            type: 'setInputColor',
+            id: 0,
+            value: '',
+        });
+        dispatch({
+            type: 'setInputName',
+            id: 0,
+            value: '',
+        });
     };
 
     const cancelEdit = () => {
         setSelectedCar(emptyCar);
+        dispatch({
+            type: 'selectCar',
+            id: 0,
+            car: emptyCar,
+        });
         setColor('');
         setName('');
         setColorPickerDisplay('none');
+        dispatch({
+            type: 'setColorPickerDisplay',
+            id: 0,
+            value: 'none',
+        });
     };
 
     return (
@@ -70,6 +100,11 @@ const AddCarBlock = () => {
                     ref={inputName}
                     onChange={(event) => {
                         setName(event.target.value);
+                        dispatch({
+                            type: 'setInputName',
+                            value: event.target.value,
+                            id: 0,
+                        });
                     }}
                 />
                 <div className="colorPicker">
@@ -82,14 +117,47 @@ const AddCarBlock = () => {
                         ref={inputColor}
                         onFocus={() => {
                             setColorPickerDisplay('block');
+                            dispatch({
+                                type: 'setColorPickerDisplay',
+                                id: 0,
+                                value: 'block',
+                            });
+                        }}
+                        onChange={() => {
+                            dispatch({
+                                type: 'setInputColor',
+                                value: color,
+                                id: 0,
+                            });
                         }}
                     />
                     <div className="colorPickerWindow" style={{ display: colorPickerDisplay }}>
-                        <HexColorPicker color={color} onChange={setColor} />
+                        <HexColorPicker
+                            color={color}
+                            onChange={setColor}
+                            onClick={() => {
+                                dispatch({
+                                    type: 'setInputColor',
+                                    value: color,
+                                    id: 0,
+                                });
+                            }}
+                        />
                         <button
                             className="colorPickerButton"
                             onClick={() => {
                                 setColorPickerDisplay('none');
+                                console.log('picking ok');
+                                dispatch({
+                                    type: 'setColorPickerDisplay',
+                                    id: 0,
+                                    value: 'none',
+                                });
+                                dispatch({
+                                    type: 'setInputColor',
+                                    value: color,
+                                    id: 0,
+                                });
                             }}
                         >
                             Ok

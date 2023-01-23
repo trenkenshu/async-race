@@ -1,8 +1,11 @@
 import React, { useContext } from 'react';
 import garageContext from '../../context/garageContext';
+import { ReducerContext } from '../App/App';
 
 const RaceBlock = () => {
     const { cars, started, singleCarRace, singleCarStop, rs } = useContext(garageContext);
+    const { reducerState, dispatch } = useContext(ReducerContext);
+
     return (
         <div className="raceBlock">
             <h1 className="header-3">Race controls</h1>
@@ -13,7 +16,7 @@ const RaceBlock = () => {
                         singleCarRace(elem.id, rs.raceNow);
                     });
                 }}
-                disabled={Boolean(started.length)}
+                disabled={reducerState.raceNow.find((el) => el == true)}
             >
                 {' '}
                 Start Race
@@ -22,11 +25,16 @@ const RaceBlock = () => {
             <button
                 className="btn"
                 onClick={() => {
-                    cars.forEach((elem) => {
-                        return singleCarStop(elem.id, rs);
+                    reducerState.raceNow.forEach((elem, ind) => {
+                        if (elem === true) singleCarStop(ind, rs);
                     });
+                    // dispatch({
+                    //     type: 'setFinish',
+                    //     value: -1,
+                    //     id: 0,
+                    // });
                 }}
-                disabled={Boolean(!started.length)}
+                disabled={Boolean(!reducerState.raceNow.find((el) => el == true))}
             >
                 Reset
             </button>

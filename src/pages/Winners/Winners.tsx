@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Rest from '../../api/rest';
 import { ICar, IWinner } from '../../interface/interface';
 import CarImg from '../../assets/car2.svg';
+import { ReducerContext } from '../../components/App/App';
 
 const api = new Rest();
 
@@ -10,8 +11,9 @@ const Winners = () => {
     const [winners, setWinners] = useState<{ winner: IWinner; name: string | undefined; color: string | undefined }[]>(
         []
     );
+    const { reducerState, dispatch } = useContext(ReducerContext);
     const [pages, setPages] = useState<number[]>([]);
-    const [curentPageNum, setCurentPageNum] = useState(1);
+    const [totWin, setTotWin] = useState(reducerState.totalWinners);
     const [sort, setSort] = useState<'time' | 'id' | 'wins' | undefined>(undefined);
     const [ascDesc, setAscDesc] = useState<'ASC' | 'DESC' | undefined>(undefined);
 
@@ -23,8 +25,14 @@ const Winners = () => {
     ) => {
         api.getWinners(10, page, sort, order)
             .then((response: Response) => {
-                const totalCars = Number(response.headers.get('X-Total-Count'));
-                const pagesCount = Math.ceil(totalCars / 10);
+                const totalWinners = Number(response.headers.get('X-Total-Count'));
+                const pagesCount = Math.ceil(totalWinners / 10);
+                dispatch({
+                    type: 'setTotalWinners',
+                    id: 0,
+                    value: totalWinners,
+                });
+                setTotWin(totalWinners);
                 setPages(Array.from({ length: pagesCount }).map((item, index) => index + 1));
                 return response.json() as Promise<IWinner[]>;
             })
@@ -49,23 +57,41 @@ const Winners = () => {
             .catch((err: Error) => console.log('getCars', err.message));
     };
     useEffect(() => {
-        refreshWinners(1);
+        refreshWinners(reducerState.winPage);
     }, []);
 
     const changeSort = (newSort: 'time' | 'id' | 'wins') => {
-        if (sort === newSort) {
-            const order = ascDesc === 'ASC' ? 'DESC' : 'ASC';
-            setAscDesc(order);
-            refreshWinners(curentPageNum, newSort, order);
+        if (reducerState.winSort === newSort) {
+            const order = reducerState.winDirection === 'ASC' ? 'DESC' : 'ASC';
+            //setAscDesc(order);
+            dispatch({
+                type: 'setWinDirection',
+                id: 0,
+                value: order,
+            });
+            refreshWinners(reducerState.winPage, newSort, order);
         } else {
             setSort(newSort);
             setAscDesc('ASC');
-            refreshWinners(curentPageNum, newSort, 'ASC');
+            dispatch({
+                type: 'setWinSort',
+                id: 0,
+                value: newSort,
+            });
+            dispatch({
+                type: 'setWinDirection',
+                id: 0,
+                value: 'ASC',
+            });
+            refreshWinners(reducerState.winPage, newSort, 'ASC');
         }
     };
     return (
         <div>
-            <h1 className="header">Winners</h1>
+            <h1 className="header">
+                Winners <span>{totWin ? `(${totWin})` : ``}</span>
+                <span className="numPage">{reducerState.winPage} page</span>
+            </h1>
             <div style={{ height: '2rem' }}>
                 Go to{' '}
                 <Link className="link" to="/garage">
@@ -75,7 +101,8 @@ const Winners = () => {
             <div className="tableLine head">
                 <div className="tableItem">№</div>
                 <div className={(sort === 'id' ? 'active ' : '') + 'tableItem search'} onClick={() => changeSort('id')}>
-                    ID <span className="asc-desc">{sort === 'id' ? ascDesc : ''}</span>
+                    ID{' '}
+                    <span className="asc-desc">{reducerState.winSort === 'id' ? reducerState.winDirection : ''}</span>
                 </div>
                 <div className="tableItem flex3">Name</div>
                 <div className="tableItem flex2">Car</div>
@@ -83,21 +110,23 @@ const Winners = () => {
                     className={(sort === 'wins' ? 'active ' : '') + 'tableItem search'}
                     onClick={() => changeSort('wins')}
                 >
-                    Wins <span className="asc-desc">{sort === 'wins' ? ascDesc : ''}</span>
+                    Wins{' '}
+                    <span className="asc-desc">{reducerState.winSort === 'wins' ? reducerState.winDirection : ''}</span>
                 </div>
                 <div
                     className={(sort === 'time' ? 'active ' : '') + 'tableItem search'}
                     onClick={() => changeSort('time')}
                 >
-                    Time <span className="asc-desc">{sort === 'time' ? ascDesc : ''}</span>
+                    Time{' '}
+                    <span className="asc-desc">{reducerState.winSort === 'time' ? reducerState.winDirection : ''}</span>
                 </div>
             </div>
             {winners.map((line, index) => {
                 return (
                     <div className="tableLine" key={line.winner.id}>
                         <div className="tableItem">
-                            {curentPageNum - 1
-                                ? ((curentPageNum - 1) * 10 + (index + 1)).toString()
+                            {reducerState.winPage - 1
+                                ? ((reducerState.winPage - 1) * 10 + (index + 1)).toString()
                                 : (index + 1).toString()}
                         </div>
                         <div className="tableItem">{line.winner.id}</div>
@@ -118,10 +147,15 @@ const Winners = () => {
                     return (
                         <span key={i * 100000}>
                             <span
-                                className={i !== curentPageNum ? 'page link' : 'page link active'}
+                                className={i !== reducerState.winPage ? 'page link' : 'page link active'}
                                 key={i}
                                 onClick={() => {
-                                    setCurentPageNum(i);
+                                    dispatch({
+                                        type: 'setWinPage',
+                                        id: 0,
+                                        value: i,
+                                    });
+
                                     refreshWinners(i, sort, ascDesc);
                                 }}
                             >
@@ -132,6 +166,7 @@ const Winners = () => {
                     );
                 })}
             </div>
+            <div className="modal"></div>
         </div>
     );
 };

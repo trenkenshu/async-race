@@ -46,9 +46,15 @@ export interface IGarage {
     started: number[];
     singleCarRace: (arg: number, raceNow: number[]) => void;
     singleCarStop: (id: number, rs: IRaceState) => void;
+    reducerState: IReducerState;
+    dispatch: React.Dispatch<IReducerAction>;
 }
 
 export interface IReducerState {
+    winSort: 'id' | 'time' | 'wins' | '';
+    winDirection: 'ASC' | 'DESC' | '';
+    winPage: number;
+    racePage: number[];
     raceNow: boolean[];
     crash: boolean[];
     drive: boolean[];
@@ -60,12 +66,14 @@ export interface IReducerState {
         color: string;
     };
     totalCars: number;
+    totalWinners: number;
     position: {
         interval: number[];
         position: number[];
     };
     garagePageNum: number;
-    garageTotalPages: number;
+    garageTotalPages: number[];
+    colorPickerDisplay: 'block' | 'none';
 }
 
 export interface IReducerAction {
@@ -85,9 +93,22 @@ export interface IReducerAction {
         | 'setPosInterval'
         | 'setPosPosition'
         | 'setGaragePageNum'
-        | 'setGarageTotalPages';
+        | 'setGarageTotalPages'
+        | 'setWinPage'
+        | 'setWinDirection'
+        | 'setWinSort'
+        | 'setColorPickerDisplay'
+        | 'setTotalWinners';
+    // type: string;
     id: number;
     value?: string | number | boolean;
     car?: ICar;
     raceData?: IRace;
+    pages?: number[];
+    cars?: ICar[];
+}
+
+export interface IReducerContext {
+    reducerState: IReducerState;
+    dispatch: React.Dispatch<IReducerAction>;
 }

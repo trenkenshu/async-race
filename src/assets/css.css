@@ -205,21 +205,46 @@ input {
 .page {
     margin: 0 10px;
 }
-.modal {
+/* .modal {
     position: fixed;
     font-size: 20px;
     width: 20%;
-    height: 20%;
-    top: 100vh;
+    height: 20vh;
+    top: 200vh;
     left: 40vw;
     transition: all ease-out 0.6s;
-    line-height: 150px;
+    line-height: 20vh;
     background: #555;
     text-align: center;
     z-index: 1000;
 }
 .modal.active {
     top: 45vh;
+
+    display: block;
+} */
+.numPage {
+    float: right;
+    font-size: 1rem;
+    margin-right: 10px;
+
+}
+.modal {
+    position: fixed;
+    font-size: 22px;
+    width: 60%;
+    height: 20vh;
+    top: 200vh;
+    left: 20%;
+    transition: all ease-out 0.6s;
+    line-height: 20vh;
+    background: #555;
+    text-align: center;
+    z-index: 1000;
+}
+.modal.active {
+    top: 38vh;
+    display: block;
 }
 
 /* addCarBlock */
@@ -321,7 +346,7 @@ input {
     position: absolute;
     right: 5%;
     top: 0;
-    font-size: 0.55rem;
+    font-size: 0.5rem;
 }
 .tableItem.search:hover {
     background: #111;
@@ -331,7 +356,16 @@ input {
     background: #000;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1250px) {
+    body {
+        font-size: 12px;
+    }
+    .asc-desc {
+        font-size: 0.45rem;
+    }
+}
+
+@media (max-width: 1100px) {
     .svg {
         width: 8%;
     }
@@ -350,6 +384,24 @@ input {
     }
     .asc-desc {
         font-size: 0.35rem;
+    }
+
+    .modal {
+        position: fixed;
+        font-size: 16px;
+        width: 90%;
+        height: 20vh;
+        top: 200vh;
+        left: 5%;
+        transition: all ease-out 0.6s;
+        line-height: 20vh;
+        background: #555;
+        text-align: center;
+        z-index: 1000;
+    }
+    .modal.active {
+        top: 38vh;
+        display: block;
     }
 
 }
