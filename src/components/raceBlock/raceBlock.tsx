@@ -28,13 +28,8 @@ const RaceBlock = () => {
                     reducerState.raceNow.forEach((elem, ind) => {
                         if (elem === true) singleCarStop(ind, rs);
                     });
-                    // dispatch({
-                    //     type: 'setFinish',
-                    //     value: -1,
-                    //     id: 0,
-                    // });
                 }}
-                disabled={Boolean(!reducerState.raceNow.find((el) => el == true))}
+                disabled={!(reducerState.raceNow.filter((el) => el == true).length === cars.length)}
             >
                 Reset
             </button>

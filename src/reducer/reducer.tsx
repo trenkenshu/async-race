@@ -37,11 +37,11 @@ const garageReducer = (state: IReducerState, action: IReducerAction) => {
     switch (action.type) {
         case 'addRace': {
             state.raceNow[action.id] = true;
-            return state;
+            return { ...state };
         }
         case 'removeRace': {
             state.raceNow[action.id] = false;
-            return state;
+            return { ...state };
         }
         case 'addCrash': {
             const x = state.crash.slice(0);
@@ -50,15 +50,15 @@ const garageReducer = (state: IReducerState, action: IReducerAction) => {
         }
         case 'removeCrash': {
             state.crash[action.id] = false;
-            return state;
+            return { ...state };
         }
         case 'addDrive': {
             state.drive[action.id] = true;
-            return state;
+            return { ...state };
         }
         case 'removeDrive': {
             state.drive[action.id] = false;
-            return state;
+            return { ...state };
         }
         case 'setFinish': {
             state.finished = action.id;
@@ -67,42 +67,42 @@ const garageReducer = (state: IReducerState, action: IReducerAction) => {
         case 'setTimeToFinish': {
             if (typeof action.value == 'number') state.timeToFinish[action.id] = action.value;
             else console.log('wrong type setTimeToFinish, id:', action.id);
-            return state;
+            return { ...state };
         }
         case 'selectCar': {
             if (action.car) state.selectedCar = action.car;
             else console.log('wrong type selectCar, id:', action.id);
-            return state;
+            return { ...state };
         }
         case 'setTotalCars': {
             if (typeof action.value == 'number') state.totalCars = action.value;
             else console.log('wrong type setTotalCars, id:', action.id);
-            return state;
+            return { ...state };
         }
         case 'setTotalWinners': {
             if (typeof action.value == 'number') state.totalWinners = action.value;
             else console.log('wrong type setTotalWinners, id:', action.id);
-            return state;
+            return { ...state };
         }
         case 'setInputName': {
             if (typeof action.value == 'string') state.inputs.name = action.value;
             else console.log('wrong type setInputName, id:', action.id);
-            return state;
+            return { ...state };
         }
         case 'setInputColor': {
             if (typeof action.value == 'string') state.inputs.color = action.value;
             else console.log('wrong type setInputColor, id:', action.id);
-            return state;
+            return { ...state };
         }
         case 'setPosInterval': {
             state.position.interval[action.id] = window.setInterval(() => {
                 if (state.crash[action.id]) {
                     console.log('disabled on crash', action.id);
                     clearInterval(state.position.interval[action.id]);
-                    return state;
+                    return { ...state };
                 }
                 if (action.raceData && state.position.position[action.id] < 90) {
-                    state.position.position[action.id] += (action.raceData.velocity / action.raceData.distance) * 4500;
+                    state.position.position[action.id] += (action.raceData.velocity / action.raceData.distance) * 2200;
                 } else {
                     clearInterval(state.position.interval[action.id]);
                     state.finished = action.id;
@@ -117,7 +117,7 @@ const garageReducer = (state: IReducerState, action: IReducerAction) => {
                                 ' won in ' +
                                 state.timeToFinish[action.id].toString() +
                                 'sec';
-                            setTimeout(() => modal.classList.remove('active') /*modal.style.top = '400vh'*/, 5000);
+                            setTimeout(() => modal.classList.remove('active') /*modal.style.top = '400vh'*/, 2500);
                         }
 
                         api.getOneResponse(action.id, 'winners')
@@ -126,6 +126,7 @@ const garageReducer = (state: IReducerState, action: IReducerAction) => {
                                     api.createWinner(action.id, 1, state.timeToFinish[action.id])
                                         .then((winner) => {
                                             console.log('create winner, first win', winner);
+                                            return { ...state };
                                         })
                                         .catch((err: Error) => console.log(err.message));
                                 } else {
@@ -136,50 +137,50 @@ const garageReducer = (state: IReducerState, action: IReducerAction) => {
                                                     ? json.time
                                                     : state.timeToFinish[action.id];
                                             console.log('create winner, existing winner', json, newTime);
-                                            api.updateWinner(action.id, json.wins + 1, newTime).catch((err: Error) =>
-                                                console.log(err.message)
-                                            );
+                                            api.updateWinner(action.id, json.wins + 1, newTime)
+                                                .then(() => {
+                                                    return { ...state };
+                                                })
+                                                .catch((err: Error) => console.log(err.message));
                                         })
                                         .catch((err: Error) => console.log(err.message));
                                 }
                             })
                             .catch((err: Error) => console.log(err.message));
                     }
-                    //     clearInterval(state.position.interval[action.id]);
-                    //     state.finished = action.id;
-                    //     console.log('disabled on finish', action.id);
                 }
             }, 30);
             if (!action.raceData) console.log('missing or wrong setPosInterval, id:', action.id);
-            return state;
+            return { ...state };
         }
         case 'setPosPosition': {
-            if (typeof action.value == 'number') state.position.position[action.id] = action.value;
-            return state;
+            const newPos = { ...state.position };
+            if (typeof action.value == 'number') /*state.position*/ newPos.position[action.id] = action.value;
+            return { ...state, position: newPos };
         }
         case 'setGaragePageNum': {
             if (typeof action.value == 'number') state.garagePageNum = action.value;
-            return state;
+            return { ...state };
         }
         case 'setGarageTotalPages': {
             if (action.pages) state.garageTotalPages = action.pages;
-            return state;
+            return { ...state };
         }
         case 'setWinPage': {
             if (typeof action.value == 'number') state.winPage = action.value;
-            return state;
+            return { ...state };
         }
         case 'setWinDirection': {
             if (action.value == 'ASC' || action.value == 'DESC') state.winDirection = action.value;
-            return state;
+            return { ...state };
         }
         case 'setWinSort': {
             if (action.value == 'id' || action.value == 'time' || action.value == 'wins') state.winSort = action.value;
-            return state;
+            return { ...state };
         }
         case 'setColorPickerDisplay': {
             if (action.value == 'none' || action.value == 'block') state.colorPickerDisplay = action.value;
-            return state;
+            return { ...state };
         }
 
         // default: {

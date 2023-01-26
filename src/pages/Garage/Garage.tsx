@@ -129,8 +129,7 @@ const Garage = () => {
     const animate = (id: number, rs: IRaceState) => {
         const el = document.querySelector(`#car-${id}`) as HTMLElement;
 
-        if (el && reducerState.position.position[id])
-            el.style.left = reducerState.position.position[id].toString() + '%';
+        if (el) el.style.left = reducerState.position.position[id].toString() + '%';
 
         if (el && reducerState.position.position[id] > 90 && !reducerState.crash[id]) {
             //clearInterval(reducerState.position.interval[id]);
@@ -141,8 +140,6 @@ const Garage = () => {
                 checkAndAdd(id);
             }
         } else if (reducerState.crash[id]) {
-            clearInterval(reducerState.position.interval[id]);
-
             console.log('disabled on crush');
         } else {
             window.requestAnimationFrame(() => animate(id, rs));
@@ -176,16 +173,6 @@ const Garage = () => {
                     cars: cars.slice(),
                 });
 
-                setPosition((prev) => {
-                    prev[id] = {
-                        interval: window.setInterval(() => {
-                            prev[id].position += (data.velocity / data.distance) * 450;
-                        }, 1),
-                        position: 0,
-                    };
-                    return prev;
-                });
-
                 requestAnimationFrame(() => {
                     animate(id, rs);
                 });
@@ -195,18 +182,11 @@ const Garage = () => {
             .then((res: Response) => {
                 if (res.status == 500) {
                     console.log('broken', id);
-                    reducerState.raceNow[id] && dispatch({ type: 'addCrash', id: id });
-                    reducerState.raceNow[id] && rs.crash.push(id);
+                    if (reducerState.raceNow[id] && !reducerState.drive[id] && reducerState.position.position[id] < 90)
+                        dispatch({ type: 'addCrash', id: id });
                     clearInterval(reducerState.position.interval[id]);
-                    setPosition((prev) => {
-                        clearInterval(prev[id].interval);
-
-                        return prev;
-                    });
-                } else if (res.status == 404) {
-                    console.log('double start', id);
                 } else {
-                    reducerState.raceNow[id] && dispatch({ type: 'addDrive', id: id });
+                    if (reducerState.raceNow[id] && !reducerState.crash[id]) dispatch({ type: 'addDrive', id: id });
                 }
             })
             .catch((err: Error) => console.log(err.message));
@@ -226,23 +206,6 @@ const Garage = () => {
 
         clearInterval(reducerState.position.interval[id]);
 
-        dispatch({
-            type: 'removeRace',
-            id: id,
-        });
-        dispatch({
-            type: 'removeDrive',
-            id: id,
-        });
-        dispatch({
-            type: 'removeCrash',
-            id: id,
-        });
-        dispatch({
-            type: 'setTimeToFinish',
-            id: 0,
-            value: 0,
-        });
         api.stopEngine(id)
             .then(() => {
                 dispatch({
@@ -250,19 +213,30 @@ const Garage = () => {
                     id: id,
                     value: 0,
                 });
-                const el = document.querySelector(`#car-${id}`) as HTMLElement;
-                if (el) el.style.left = '0px';
+                dispatch({
+                    type: 'setTimeToFinish',
+                    id: 0,
+                    value: 0,
+                });
+                dispatch({
+                    type: 'removeRace',
+                    id: id,
+                });
+                dispatch({
+                    type: 'removeCrash',
+                    id: id,
+                });
+                dispatch({
+                    type: 'removeDrive',
+                    id: id,
+                });
 
+                // const el = document.querySelector(`#car-${id}`) as HTMLElement;
+                // if (el) el.style.left = '0px';
+                // if (el) el.style.left = '0px';
                 setStarted((prev: number[]) => remove(prev, id));
                 setDrive((prev: number[]) => remove(prev, id));
                 setCrashed((prev: number[]) => remove(prev, id));
-
-                // setPosition((prev) => {
-                //     //window.clearInterval(prev[id].interval);
-                //     prev[id].position = 0;
-
-                //     return prev;
-                // });
             })
             .catch((err: Error) => console.log(err.message));
     };
@@ -307,7 +281,17 @@ const Garage = () => {
                 </h1>
                 <div style={{ height: '2rem' }}>
                     Go to{' '}
-                    <Link className="link" to="/winners">
+                    <Link
+                        className="link"
+                        to="/winners"
+                        onClick={() => {
+                            dispatch({
+                                type: 'setInputColor',
+                                id: 0,
+                                value: color,
+                            });
+                        }}
+                    >
                         Winners
                     </Link>
                 </div>
@@ -323,7 +307,7 @@ const Garage = () => {
                                         {reducerState.raceNow.find((i, ind) => ind === item.id) ? ' started' : ''}
                                     </span>{' '}
                                     <span className="drive">
-                                        {/*reducerState.drive.find((i, ind) => ind === item.id) ? 'ok' : ''*/}
+                                        {reducerState.drive.find((i, ind) => ind === item.id) ? 'ok' : ''}
                                     </span>{' '}
                                     <span className="crashed">
                                         {reducerState.crash.find((i, ind) => ind === item.id) ? 'crashed' : ''}
@@ -415,10 +399,11 @@ const Garage = () => {
                                     className="svg"
                                     fill={item.color}
                                     style={{
-                                        left:
-                                            reducerState.position.position[item.id] && reducerState.raceNow[item.id]
-                                                ? reducerState.position.position[item.id].toString() + '%'
-                                                : '0%',
+                                        left: reducerState.position.position[
+                                            item.id
+                                        ] /*&& reducerState.raceNow[item.id]*/
+                                            ? reducerState.position.position[item.id].toString() + '%'
+                                            : 0,
                                     }}
                                 />
 

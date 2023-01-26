@@ -259,7 +259,7 @@ input {
 }
 .colorPickerWindow {
     position: absolute;
-    left: 10%;
+    left: 200px;
     top: 3%;
     z-index: 100;
     text-align: center;
@@ -362,6 +362,18 @@ input {
     }
     .asc-desc {
         font-size: 0.45rem;
+        position: static;
+
+    }
+    .tableLine.head {
+        text-transform:  none;
+        font-weight: 200;
+        background: #1c1c1c;
+    }
+
+    .tableLine.head .tableItem {
+        text-align: center;
+        padding: 0;
     }
 }
 

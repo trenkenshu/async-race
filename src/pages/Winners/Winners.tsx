@@ -89,7 +89,7 @@ const Winners = () => {
     return (
         <div>
             <h1 className="header">
-                Winners <span>{totWin ? `(${totWin})` : ``}</span>
+                Winners <span>{reducerState.totalWinners ? `(${reducerState.totalWinners})` : ``}</span>
                 <span className="numPage">{reducerState.winPage} page</span>
             </h1>
             <div style={{ height: '2rem' }}>
